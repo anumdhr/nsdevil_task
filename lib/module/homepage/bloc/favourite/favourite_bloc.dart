@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_event.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_state.dart';
 import 'package:nsdevil_project/module/homepage/models/post.dart';
 import 'package:nsdevil_project/module/utils/cache_manager.dart';
-import 'favourite_event.dart';
-import 'favourite_state.dart';
 
 class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   final cacheManager = FavoritesCacheManager.instance;

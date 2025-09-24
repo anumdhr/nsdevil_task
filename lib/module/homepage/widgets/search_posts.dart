@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nsdevil_project/module/homepage/bloc/post/post_bloc.dart';
@@ -20,7 +18,7 @@ class SearchPost extends StatelessWidget {
         context.read<PostBloc>().add(SearchPostsEvent(value));
       },
       onTapOutside: (event) {
-        FocusScope.of(context)!.unfocus();
+        FocusScope.of(context).unfocus();
       },
       decoration: InputDecoration(
         border: const OutlineInputBorder(

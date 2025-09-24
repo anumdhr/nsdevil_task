@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/connectivity_cubit/connectivity_cubit.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_state.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_event.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_state.dart';
+import 'package:nsdevil_project/module/homepage/bloc/theme/theme_cubit.dart';
+import 'package:nsdevil_project/module/homepage/widgets/connectivity_banner.dart';
+import 'package:nsdevil_project/module/homepage/widgets/post_tile.dart';
+import 'package:nsdevil_project/module/homepage/widgets/search_posts.dart';
+import 'package:nsdevil_project/module/services/navigation_services.dart';
+import 'package:nsdevil_project/module/utils/nav_locator.dart';
 import 'package:nsdevil_project/module/utils/route.dart';
-
-import '../../services/navigation_services.dart';
-import '../../utils/nav_locator.dart';
-import '../bloc/connectivity_cubit/connectivity_cubit.dart';
-import '../bloc/favourite/favourite_bloc.dart';
-import '../bloc/favourite/favourite_state.dart';
-import '../bloc/post/post_bloc.dart';
-import '../bloc/post/post_event.dart';
-import '../bloc/post/post_state.dart';
-import '../bloc/theme/theme_cubit.dart';
-import '../widgets/connectivity_banner.dart';
-import '../widgets/post_tile.dart';
-import '../widgets/search_posts.dart';
 
 class PostListScreen extends StatefulWidget {
   const PostListScreen({super.key});
@@ -106,7 +105,9 @@ class _PostListScreenState extends State<PostListScreen> {
                     child: BlocBuilder<PostBloc, PostState>(
                       builder: (context, state) {
                         if (state is PostLoading && state is! PostLoadingMore) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         if (state is PostLoaded || state is PostLoadingMore) {

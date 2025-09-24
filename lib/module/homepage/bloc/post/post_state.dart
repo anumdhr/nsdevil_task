@@ -1,5 +1,3 @@
-// lib/controllers/post_state.dart
-
 import 'package:nsdevil_project/module/homepage/models/post.dart';
 
 abstract class PostState {}
