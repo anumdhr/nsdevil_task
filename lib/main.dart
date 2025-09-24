@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/post_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/post_event.dart';
-import 'package:nsdevil_project/module/homepage/bloc/theme_cubit.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_bloc.dart';
+import 'package:nsdevil_project/module/homepage/bloc/theme/theme_cubit.dart';
 import 'package:nsdevil_project/module/homepage/repository/post_repository.dart';
-import 'package:nsdevil_project/module/homepage/screens/favourite_screen.dart';
-import 'package:nsdevil_project/module/homepage/screens/post_detail_screen.dart';
-import 'package:nsdevil_project/module/homepage/screens/post_list_screen.dart';
-import 'package:nsdevil_project/module/utils/connectiviity.dart';
+import 'module/homepage/bloc/connectivity_cubit/connectivity_cubit.dart';
+import 'module/homepage/bloc/post/post_event.dart';
+import 'module/services/navigation_services.dart';
+import 'module/utils/app_theme.dart';
+import 'module/utils/nav_locator.dart';
+import 'module/utils/route.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final internet = InternetConnectivitySingleton();
-
+  setupLocator();
   runApp(MyApp());
 }
 
@@ -31,20 +31,19 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(create: (_) => FavoritesBloc()),
         BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(create: (_) => ConnectivityCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
-            theme: ThemeData.light(),
-            darkTheme: ThemeData.dark(),
+            debugShowCheckedModeBanner: false,
+            navigatorKey: locator<NavigationService>().navigatorKey,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             themeMode: themeState.mode,
             title: 'NSDevil Project',
-            initialRoute: "postScreen",
-            routes: {
-              "postScreen": (context) => PostListScreen(),
-              "postDetailScreen": (context) => PostDetailScreen(),
-              "favoriteScreen": (context) => FavoritesScreen(),
-            },
+            initialRoute: AppRoutes.splashScreen,
+            onGenerateRoute: AppRoutes.generateRoute,
           );
         },
       ),

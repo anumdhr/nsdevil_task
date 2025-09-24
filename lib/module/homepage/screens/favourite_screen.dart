@@ -1,11 +1,12 @@
-// lib/views/favorites_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_state.dart';
+import 'package:nsdevil_project/module/homepage/bloc/favourite/favourite_bloc.dart';
 import 'package:nsdevil_project/module/homepage/widgets/post_tile.dart';
 
+import '../bloc/favourite/favourite_state.dart';
+
 class FavoritesScreen extends StatelessWidget {
+  const FavoritesScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

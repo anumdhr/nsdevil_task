@@ -1,20 +1,21 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_event.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_state.dart';
 import 'package:nsdevil_project/module/homepage/models/post.dart';
 import 'package:nsdevil_project/module/utils/cache_manager.dart';
+import 'favourite_event.dart';
+import 'favourite_state.dart';
 
 class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   final cacheManager = FavoritesCacheManager.instance;
   final String cacheKey = "favorites.json";
 
-  FavoritesBloc() : super(FavoritesState([])) {
+  FavoritesBloc() : super(const FavoritesState([])) {
     on<ToggleFavorite>(_onToggleFavorite);
     on<LoadFavorites>(_onLoadFavorites);
     on<DeleteFavorite>(_onDeleteFavorite);
+
+    add(LoadFavorites());
   }
 
   void _onLoadFavorites(
@@ -27,12 +28,13 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
         final jsonString = await cachedFile.file.readAsString();
         final List data = jsonDecode(jsonString);
         final favorites = data.map((e) => Post.fromJson(e)).toList();
-        emit(FavoritesState(favorites));
+
+        emit(state.copyWith(favorites: favorites));
       } else {
-        emit(FavoritesState([]));
+        emit(state.copyWith(favorites: []));
       }
     } catch (e) {
-      emit(FavoritesState([]));
+      emit(state.copyWith(favorites: []));
     }
   }
 
@@ -40,44 +42,36 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     ToggleFavorite event,
     Emitter<FavoritesState> emit,
   ) async {
-    final updated = List<Post>.from(state.favorites);
-    if (updated.any((p) => p.id == event.post.id)) {
-      updated.removeWhere((p) => p.id == event.post.id);
+    final updatedFavorites = List<Post>.from(state.favorites);
+    if (updatedFavorites.any((p) => p.id == event.post.id)) {
+      updatedFavorites.removeWhere((p) => p.id == event.post.id);
     } else {
-      updated.add(event.post);
+      updatedFavorites.add(event.post);
     }
-    emit(FavoritesState(updated));
-    await _saveToCache(updated);
+    emit(state.copyWith(favorites: updatedFavorites));
+    await _saveToCache(updatedFavorites);
   }
 
   void _onDeleteFavorite(
     DeleteFavorite event,
     Emitter<FavoritesState> emit,
   ) async {
-    final updated = List<Post>.from(state.favorites)
+    final updatedFavorites = List<Post>.from(state.favorites)
       ..removeWhere((p) => p.id == event.post.id);
-    emit(FavoritesState(updated));
-    await _saveToCache(updated);
+    emit(state.copyWith(favorites: updatedFavorites));
+    await _saveToCache(updatedFavorites);
   }
 
   Future<void> _saveToCache(List<Post> favorites) async {
-    final jsonString = jsonEncode(
-      favorites
-          .map(
-            (p) => {
-              "id": p.id,
-              "title": p.title,
-              "body": p.body,
-              "tags": p.tags,
-              "reactions": p.reactions,
-              "userId": p.userId,
-            },
-          )
-          .toList(),
-    );
+    final jsonString = jsonEncode(favorites.map((p) => p.toJson()).toList());
 
-    final bytes = Uint8List.fromList(jsonString.codeUnits);
-    await cacheManager.putFile(cacheKey, bytes, maxAge: Duration(days: 30));
+    final bytes = utf8.encode(jsonString);
+
+    await cacheManager.putFile(
+      cacheKey,
+      bytes,
+      maxAge: const Duration(days: 30),
+    );
   }
 
   bool isFavorite(Post post) => state.favorites.any((p) => p.id == post.id);

@@ -1,9 +1,9 @@
 // lib/controllers/post_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../repository/post_repository.dart';
-import '../models/post.dart';
-import 'post_event.dart';
-import 'post_state.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_event.dart';
+import 'package:nsdevil_project/module/homepage/bloc/post/post_state.dart';
+import '../../repository/post_repository.dart';
+import '../../models/post.dart';
 
 class PostBloc extends Bloc<PostEvent, PostState> {
   final PostRepository repository;

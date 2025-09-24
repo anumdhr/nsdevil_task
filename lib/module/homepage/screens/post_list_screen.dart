@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nsdevil_project/config/sizedBox_extensions.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/favourite_event.dart';
-import 'package:nsdevil_project/module/homepage/bloc/post_bloc.dart';
-import 'package:nsdevil_project/module/homepage/bloc/post_event.dart';
-import 'package:nsdevil_project/module/homepage/bloc/post_state.dart';
-import 'package:nsdevil_project/module/homepage/bloc/theme_cubit.dart';
-import 'package:nsdevil_project/module/homepage/widgets/post_tile.dart';
-import 'package:nsdevil_project/module/homepage/widgets/search_posts.dart';
-import 'package:nsdevil_project/module/utils/const.dart';
+import 'package:nsdevil_project/module/utils/route.dart';
+
+import '../../services/navigation_services.dart';
+import '../../utils/nav_locator.dart';
+import '../bloc/connectivity_cubit/connectivity_cubit.dart';
+import '../bloc/favourite/favourite_bloc.dart';
+import '../bloc/favourite/favourite_state.dart';
+import '../bloc/post/post_bloc.dart';
+import '../bloc/post/post_event.dart';
+import '../bloc/post/post_state.dart';
+import '../bloc/theme/theme_cubit.dart';
+import '../widgets/connectivity_banner.dart';
+import '../widgets/post_tile.dart';
+import '../widgets/search_posts.dart';
 
 class PostListScreen extends StatefulWidget {
   const PostListScreen({super.key});
@@ -25,14 +29,10 @@ class _PostListScreenState extends State<PostListScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Load initial posts
     context.read<PostBloc>().add(LoadPostsEvent());
-
-    // Pagination listener
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 100) {
+          _scrollController.position.maxScrollExtent - 200) {
         context.read<PostBloc>().add(LoadPostsEvent(loadMore: true));
       }
     });
@@ -52,91 +52,112 @@ class _PostListScreenState extends State<PostListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: primaryColor,
       appBar: AppBar(
-        backgroundColor: primaryColor,
-        title: const Text(
-          'All Posts',
-          style: TextStyle(color: Colors.black, fontSize: 20),
-        ),
+        title: const Text('Postly'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.red),
-            onPressed: () {
-              context.read<FavoritesBloc>().add(LoadFavorites());
-              Navigator.pushNamed(context, "favoriteScreen");
+          BlocBuilder<FavoritesBloc, FavoritesState>(
+            builder: (context, state) {
+              final favCount = state.favorites.length;
+
+              return Badge(
+                label: Text('$favCount'),
+                isLabelVisible: favCount > 0,
+                offset: const Offset(-4, 4),
+                child: IconButton(
+                  icon: Icon(Icons.favorite, color: theme.colorScheme.primary),
+                  onPressed: () {
+                    locator<NavigationService>().navigateTo(
+                      AppRoutes.favoriteScreen,
+                    );
+                  },
+                ),
+              );
             },
           ),
           IconButton(
             icon: Icon(Icons.brightness_6),
             onPressed: () => context.read<ThemeCubit>().toggle(),
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Column(
-          children: [
-            SearchPost(searchController: _searchController),
-            5.height,
+      body: Column(
+        children: [
+          BlocBuilder<ConnectivityCubit, ConnectivityState>(
+            builder: (context, state) {
+              if (state is ConnectivityDisconnected) {
+                return const ConnectivityBanner();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                children: [
+                  SearchPost(searchController: _searchController),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: BlocBuilder<PostBloc, PostState>(
+                      builder: (context, state) {
+                        if (state is PostLoading && state is! PostLoadingMore) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-            BlocBuilder<PostBloc, PostState>(
-              builder: (context, state) {
-                if (state is PostLoading && state is! PostLoadingMore) {
-                  return const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
+                        if (state is PostLoaded || state is PostLoadingMore) {
+                          final posts = state is PostLoaded
+                              ? state.posts
+                              : (state as PostLoadingMore).oldPosts;
+                          final hasMore = state is PostLoaded
+                              ? state.hasMore
+                              : true;
 
-                if (state is PostLoaded || state is PostLoadingMore) {
-                  final posts = state is PostLoaded
-                      ? state.posts
-                      : (state as PostLoadingMore).oldPosts;
+                          return _buildListView(posts, hasMore);
+                        }
+                        if (state is PostEmpty) {
+                          return const Center(child: Text("No posts found"));
+                        }
+                        if (state is PostError) {
+                          return Center(child: Text("Error: ${state.message}"));
+                        }
 
-                  final hasMore = state is PostLoaded ? state.hasMore : true;
-
-                  return Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _onRefresh,
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        physics: const BouncingScrollPhysics(),
-                        separatorBuilder: (_, __) => 5.height,
-                        itemCount: posts.length + (hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index < posts.length) {
-                            return PostTile(post: posts[index]);
-                          } else {
-                            return const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                        },
-                      ),
+                        return const SizedBox.shrink();
+                      },
                     ),
-                  );
-                }
-
-                if (state is PostEmpty) {
-                  return const Expanded(
-                    child: Center(child: Text("No posts found")),
-                  );
-                }
-
-                if (state is PostError) {
-                  return Expanded(
-                    child: Center(child: Text("Error: ${state.message}")),
-                  );
-                }
-
-                return const SizedBox.shrink();
-              },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListView(List<dynamic> posts, bool hasMore) {
+    return RefreshIndicator(
+      key: const ValueKey('postListView'),
+      onRefresh: _onRefresh,
+      child: ListView.separated(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemCount: posts.length + (hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < posts.length) {
+            return PostTile(post: posts[index]);
+          } else {
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+        },
       ),
     );
   }
